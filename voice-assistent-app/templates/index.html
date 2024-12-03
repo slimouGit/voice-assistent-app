@@ -7,12 +7,14 @@
 </head>
 <body>
     <h1>Voice Assistant</h1>
-    <label for="voice-select">Select Assistent:</label>
+    <label for="voice-select">Select Voice:</label>
     <br>
-    <select id="voice-select"></select>
+    <select id="voice-select">
+        <option value="" disabled selected>Select a voice</option>
+    </select>
     <br>
-    <button id="start-btn">Start</button>
-    <button id="stopp-btn">Stop</button>
+    <button id="start-btn" disabled>Start</button>
+    <button id="stop-btn" disabled>Stop</button>
 
     <script>
         // Fetch available voices and populate the dropdown
@@ -27,9 +29,9 @@
                     voiceSelect.appendChild(option);
                 });
             })
-            .catch(err => alert('Error fetching voices: ' + err));
+            .catch(err => console.error('Error fetching voices: ' + err));
 
-        // Save selected voice
+        // Save selected voice and enable buttons
         document.getElementById('voice-select').addEventListener('change', (event) => {
             const selectedVoice = event.target.value;
             fetch('/select_voice', {
@@ -40,21 +42,26 @@
                 body: JSON.stringify({ voice_id: selectedVoice })
             })
             .then(response => response.text())
-            .then(data => console.log(data))
-            .catch(err => alert('Error selecting voice: ' + err));
+            .then(data => {
+                console.log(data);
+                document.getElementById('start-btn').disabled = false;
+                document.getElementById('stop-btn').disabled = false;
+            })
+            .catch(err => console.error('Error selecting voice: ' + err));
         });
 
         document.getElementById('start-btn').addEventListener('click', () => {
             fetch('/start', { method: 'POST' })
                 .then(response => response.text())
-                .then(data => alert(data))
-                .catch(err => alert('Error: ' + err));
+                .then(data => console.log(data))
+                .catch(err => console.error('Error: ' + err));
         });
-        document.getElementById('stopp-btn').addEventListener('click', () => {
+
+        document.getElementById('stop-btn').addEventListener('click', () => {
             fetch('/stop', { method: 'POST' })
                 .then(response => response.text())
-                .then(data => alert(data))
-                .catch(err => alert('Error: ' + err));
+                .then(data => console.log(data))
+                .catch(err => console.error('Error: ' + err));
         });
     </script>
 </body>

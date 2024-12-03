@@ -1,3 +1,4 @@
+import threading
 from flask import Flask, render_template, request, jsonify
 import sounddevice as sd
 import numpy as np
@@ -16,7 +17,7 @@ DURATION = 5
 conversation_history = []
 
 # Global variable to control the loop
-stop_requested = False
+stop_requested = threading.Event()
 
 def record_audio():
     """Records audio via the microphone."""
@@ -95,16 +96,8 @@ def play_audio(file_path):
         sd.play(np.frombuffer(data, dtype=np.int16), samplerate=wf.getframerate())
         sd.wait()
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-
-@app.route('/start', methods=['POST'])
-def start():
-    global stop_requested
-    stop_requested = False
-    while not stop_requested:
+def start_recording():
+    while not stop_requested.is_set():
         audio_data = record_audio()
         save_audio_to_wav(audio_data, "input.wav")
         user_text = transcribe_audio("input.wav")
@@ -123,14 +116,24 @@ def start():
         else:
             print("No valid input recognized. Please try again.")
 
-    return "Process completed."
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/start', methods=['POST'])
+def start():
+    global stop_requested
+    stop_requested.clear()
+    recording_thread = threading.Thread(target=start_recording)
+    recording_thread.start()
+    return "Recording started."
 
 @app.route('/stop', methods=['POST'])
 def stop():
     global stop_requested
-    stop_requested = True
+    stop_requested.set()
     print("Program terminated.")
-    return "Program terminated."
+    return "Recording stopped."
 
 @app.route('/voices', methods=['GET'])
 def get_voices():
@@ -146,7 +149,6 @@ def select_voice():
     global selected_voice
     selected_voice = request.json.get('voice_id')
     return "Voice selected."
-
 
 if __name__ == "__main__":
     app.run(debug=True)
