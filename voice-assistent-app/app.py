@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import sounddevice as sd
 import numpy as np
 import wave
@@ -82,12 +82,8 @@ def synthesize_speech(prompt):
 def save_text_to_speech(text, filename="response.wav"):
     """Saves the text as a spoken response in a WAV file."""
     engine = pyttsx3.init()
-    """initializes available voices"""
-    voices = engine.getProperty('voices')
-    for voice in voices:
-        if "Zira" in voice.name:
-            engine.setProperty('voice', voice.id)
-            break
+    if selected_voice:
+        engine.setProperty('voice', selected_voice)
     engine.save_to_file(text, filename)
     engine.runAndWait()
     return filename
@@ -135,6 +131,21 @@ def stop():
     stop_requested = True
     print("Program terminated.")
     return "Program terminated."
+
+@app.route('/voices', methods=['GET'])
+def get_voices():
+    """Returns a list of available voices."""
+    engine = pyttsx3.init()
+    voices = engine.getProperty('voices')
+    voice_list = [{"id": voice.id, "name": voice.name} for voice in voices]
+    return jsonify(voice_list)
+
+@app.route('/select_voice', methods=['POST'])
+def select_voice():
+    """Sets the selected voice for text-to-speech."""
+    global selected_voice
+    selected_voice = request.json.get('voice_id')
+    return "Voice selected."
 
 
 if __name__ == "__main__":

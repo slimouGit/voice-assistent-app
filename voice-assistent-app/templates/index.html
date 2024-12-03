@@ -7,10 +7,43 @@
 </head>
 <body>
     <h1>Voice Assistant</h1>
+    <label for="voice-select">Select Assistent:</label>
+    <br>
+    <select id="voice-select"></select>
+    <br>
     <button id="start-btn">Start</button>
     <button id="stopp-btn">Stop</button>
 
     <script>
+        // Fetch available voices and populate the dropdown
+        fetch('/voices')
+            .then(response => response.json())
+            .then(voices => {
+                const voiceSelect = document.getElementById('voice-select');
+                voices.forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voice.id;
+                    option.textContent = voice.name;
+                    voiceSelect.appendChild(option);
+                });
+            })
+            .catch(err => alert('Error fetching voices: ' + err));
+
+        // Save selected voice
+        document.getElementById('voice-select').addEventListener('change', (event) => {
+            const selectedVoice = event.target.value;
+            fetch('/select_voice', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ voice_id: selectedVoice })
+            })
+            .then(response => response.text())
+            .then(data => console.log(data))
+            .catch(err => alert('Error selecting voice: ' + err));
+        });
+
         document.getElementById('start-btn').addEventListener('click', () => {
             fetch('/start', { method: 'POST' })
                 .then(response => response.text())
