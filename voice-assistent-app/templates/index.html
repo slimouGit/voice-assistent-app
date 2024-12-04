@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voice Assistant</title>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 </head>
 <body>
     <h1>Voice Assistant</h1>
@@ -15,8 +16,21 @@
     <br>
     <button id="start-btn" disabled>Start</button>
     <button id="stop-btn" disabled>Stop</button>
+    <br>
+    <div id="status-message"></div>
 
     <script>
+        const socket = io();
+
+        function updateStatusMessage(message) {
+            const statusMessage = document.getElementById('status-message');
+            statusMessage.textContent = message;
+        }
+
+        socket.on('status_update', (message) => {
+            updateStatusMessage(message);
+        });
+
         // Fetch available voices and populate the dropdown
         fetch('/voices')
             .then(response => response.json())

@@ -1,5 +1,6 @@
 import threading
 from flask import Flask, render_template, request, jsonify
+from flask_socketio import SocketIO, emit
 import sounddevice as sd
 import numpy as np
 import wave
@@ -9,6 +10,7 @@ import requests
 from config import API_KEY, REALTIME_API_URL
 
 app = Flask(__name__)
+socketio = SocketIO(app)
 
 SAMPLERATE = 16000
 DURATION = 5
@@ -19,12 +21,16 @@ conversation_history = []
 # Global variable to control the loop
 stop_requested = threading.Event()
 
+selected_voice = None
+
+def send_status_update(message):
+    socketio.emit('status_update', message)
+
 def record_audio():
-    """Records audio via the microphone."""
-    print("Recording... Speak now!")
+    send_status_update("Recording... Speak now!")
     audio_data = sd.rec(int(SAMPLERATE * DURATION), samplerate=SAMPLERATE, channels=1, dtype="int16")
     sd.wait()  # Wait until the recording is finished
-    print("Recording finished.")
+    send_status_update("Recording finished.")
     return np.array(audio_data, dtype=np.int16)
 
 def save_audio_to_wav(audio_data, filename="input.wav"):
@@ -45,12 +51,12 @@ def transcribe_audio(audio_file_path):
             "file": audio_file,
             "model": (None, "whisper-1")  # The model for speech recognition
         }
-        print("Sending audio to OpenAI API...")
+        send_status_update("Sending audio to OpenAI API...")
         response = requests.post(f"{REALTIME_API_URL}", headers=headers, files=files)
         if response.status_code == 200:
             return response.json().get("text", "")
         else:
-            print(f"Error: {response.status_code}, {response.text}")
+            send_status_update(f"Error: {response.status_code}, {response.text}")
             return None
 
 def synthesize_speech(prompt):
@@ -68,7 +74,7 @@ def synthesize_speech(prompt):
             {"role": "system", "content": "You are a friendly assistant who engages in casual conversation."}
         ] + conversation_history  # Include the conversation history
     }
-    print("Generating response...")
+    send_status_update("Generating response...")
     response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data)
     if response.status_code == 200:
         response_data = response.json()
@@ -77,7 +83,7 @@ def synthesize_speech(prompt):
         conversation_history.append({"role": "assistant", "content": text_response})
         return text_response
     else:
-        print(f"Error: {response.status_code}, {response.text}")
+        send_status_update(f"Error: {response.status_code}, {response.text}")
         return None
 
 def save_text_to_speech(text, filename="response.wav"):
@@ -103,18 +109,18 @@ def start_recording():
         user_text = transcribe_audio("input.wav")
 
         if user_text:
-            print(f"You said: {user_text}")
+            send_status_update(f"You said: {user_text}")
             if user_text.lower() in ["stop", "beenden", "ende"]:
-                print("Program terminated.")
+                send_status_update("Program terminated.")
                 break
 
             text_response = synthesize_speech(user_text)
             if text_response:
                 response_audio_file = save_text_to_speech(text_response)
-                print("Playing response...")
+                send_status_update("Playing response...")
                 play_audio(response_audio_file)
         else:
-            print("No valid input recognized. Please try again.")
+            send_status_update("No valid input recognized. Please try again.")
 
 @app.route('/')
 def index():
@@ -132,7 +138,7 @@ def start():
 def stop():
     global stop_requested
     stop_requested.set()
-    print("Program terminated.")
+    send_status_update("Program terminated.")
     return "Recording stopped."
 
 @app.route('/voices', methods=['GET'])
@@ -151,4 +157,4 @@ def select_voice():
     return "Voice selected."
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    socketio.run(app, debug=True)
