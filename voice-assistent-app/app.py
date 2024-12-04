@@ -26,6 +26,9 @@ selected_voice = None
 def send_status_update(message):
     socketio.emit('status_update', message)
 
+def send_text_update(text):
+    socketio.emit('text_update', text)
+
 def record_audio():
     send_status_update("Recording... Speak now!")
     audio_data = sd.rec(int(SAMPLERATE * DURATION), samplerate=SAMPLERATE, channels=1, dtype="int16")
@@ -110,6 +113,7 @@ def start_recording():
 
         if user_text:
             send_status_update(f"You said: {user_text}")
+            send_text_update(user_text)
             if user_text.lower() in ["stop", "beenden", "ende"]:
                 send_status_update("Program terminated.")
                 break

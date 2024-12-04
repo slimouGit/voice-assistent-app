@@ -18,6 +18,8 @@
     <button id="stop-btn" disabled>Stop</button>
     <br>
     <div id="status-message"></div>
+    <br>
+    <div id="transcribed-text"></div>
 
     <script>
         const socket = io();
@@ -27,8 +29,17 @@
             statusMessage.textContent = message;
         }
 
+        function updateTranscribedText(text) {
+            const transcribedText = document.getElementById('transcribed-text');
+            transcribedText.textContent = text;
+        }
+
         socket.on('status_update', (message) => {
             updateStatusMessage(message);
+        });
+
+        socket.on('text_update', (text) => {
+            updateTranscribedText(text);
         });
 
         // Fetch available voices and populate the dropdown
