@@ -125,6 +125,7 @@ def start_recording():
                 play_audio(response_audio_file)
         else:
             send_status_update("No valid input recognized. Please try again.")
+            send_text_update("The recording was not understood.")
 
 @app.route('/')
 def index():

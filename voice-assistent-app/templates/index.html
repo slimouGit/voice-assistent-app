@@ -29,7 +29,11 @@
 
         function updateTranscribedText(text) {
             const transcribedText = document.getElementById('transcribed-text');
-            transcribedText.textContent = text;
+            if (!text || /[\u3000-\u303F\u4E00-\u9FFF\uF900-\uFAFF]/.test(text)) {
+                transcribedText.textContent = 'The recording was not understood.';
+            } else {
+                transcribedText.textContent = text;
+            }
         }
 
         socket.on('status_update', (message) => {
