@@ -5,21 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voice Assistant</title>
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
-    <h1>Voice Assistant</h1>
-    <label for="voice-select">Select Voice:</label>
-    <br>
-    <select id="voice-select">
-        <option value="" disabled selected>Select a voice</option>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen">
+    <h1 class="text-3xl font-bold mb-4">Voice Assistant</h1>
+    <select id="voice-select" class="mb-4 p-2 border border-gray-300 rounded w-full max-w-md">
+        <option value="" disabled selected>Select your personal Assistent</option>
     </select>
-    <br>
-    <button id="start-btn" disabled>Start</button>
-    <button id="stop-btn" disabled>Stop</button>
-    <br>
-    <div id="status-message"></div>
-    <br>
-    <div id="transcribed-text"></div>
+    <div id="buttons-container" class="flex space-x-4 mb-4 w-full max-w-md hidden">
+        <button id="start-btn" class="flex-1 px-8 py-4 text-lg bg-blue-500 text-white rounded">Start</button>
+        <button id="stop-btn" class="flex-1 px-8 py-4 text-lg bg-red-500 text-white rounded">Stop</button>
+    </div>
+    <div id="status-message" class="mb-4 p-2 w-full max-w-md text-center"></div>
+    <div id="transcribed-text" class="p-2 w-full max-w-md text-center"></div>
 
     <script>
         const socket = io();
@@ -69,8 +67,7 @@
             .then(response => response.text())
             .then(data => {
                 console.log(data);
-                document.getElementById('start-btn').disabled = false;
-                document.getElementById('stop-btn').disabled = false;
+                document.getElementById('buttons-container').classList.remove('hidden');
             })
             .catch(err => console.error('Error selecting voice: ' + err));
         });
